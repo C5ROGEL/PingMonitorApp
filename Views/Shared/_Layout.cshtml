@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" :class="{ 'dark': darkMode }" x-data="{ sidebarOpen: true, darkMode: localStorage.getItem('darkMode') === 'true' }" x-init="$watch('darkMode', val => localStorage.setItem('darkMode', val))">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PingMonitorApp</title>
+    <link rel="icon" type="image/png" href="~/favicon.png" />
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js (Versión estable sin plugins conflictivos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] { display: none !important; }
+        .sidebar-transition { transition: all 0.3s ease; }
+
+        /* Dark mode scrollbar */
+        .dark ::-webkit-scrollbar { width: 8px; height: 8px; }
+        .dark ::-webkit-scrollbar-track { background: #1e293b; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Glassmorphism card */
+        .glass-card {
+            background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+        }
+
+        /* Pulse animation for status indicators */
+        .status-pulse {
+            animation: statusPulse 2s ease-in-out infinite;
+        }
+        @@keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Smooth transition for dark mode */
+        * { transition: background-color 0.3s ease, color 0.15s ease, border-color 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-200 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-16 bg-slate-900 dark:bg-slate-900 border-b border-slate-800 z-50 flex items-center justify-between px-4 shadow-lg shadow-black/10">
+        <div class="flex items-center gap-4">
+            <button @@click="sidebarOpen = !sidebarOpen" class="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 focus:outline-none">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="flex items-center gap-3">
+                <div class="relative group">
+                    <div class="w-12 h-10 bg-slate-800 rounded-lg flex items-center justify-center p-1.5 shadow-inner border border-slate-700 transition-all group-hover:border-blue-500">
+                        <img src="~/favicon.png" alt="MOPT Logo" class="h-full w-auto object-contain z-10 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">
+                    </div>
+                    <!-- Pulso de Monitoreo Activo -->
+                    <div class="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-blue-500 border-2 border-white dark:border-slate-800"></span>
+                    </div>
+                    <!-- Icono decorativo de Red -->
+                    <div class="absolute -bottom-1.5 -left-1.5 w-5 h-5 bg-slate-800 rounded-lg flex items-center justify-center text-[10px] text-blue-400 shadow-xl border border-slate-700">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent leading-none tracking-tight">PingMonitor</h1>
+                    <p class="text-[9px] font-bold text-slate-400 tracking-widest uppercase mt-0.5 opacity-80">Network Analytics</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <!-- Dark Mode Toggle -->
+            <button @@click="darkMode = !darkMode" 
+                    class="relative w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
+                    :class="darkMode ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-300'">
+                <span class="absolute top-0.5 transition-all duration-300 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center"
+                      :class="darkMode ? 'left-7' : 'left-0.5'">
+                    <i class="text-xs" :class="darkMode ? 'fas fa-moon text-indigo-600' : 'fas fa-sun text-amber-500'"></i>
+                </span>
+            </button>
+            <div class="text-right hidden md:block">
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Monitoreo</p>
+                <p class="text-sm font-bold text-white">MOPT El Salvador</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400">
+                <i class="fas fa-user-circle text-2xl"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside :class="sidebarOpen ? 'w-64' : 'w-20'" class="sidebar-transition fixed top-16 left-0 bottom-0 bg-slate-50 dark:bg-slate-900 border-r border-slate-300 dark:border-slate-800 z-40 overflow-hidden shadow-xl shadow-black/[0.02]">
+        <nav class="mt-8 px-4 space-y-2">
+            <a href="@Url.Action("Index", "Home")" class="flex items-center gap-4 p-3 rounded-xl transition-all @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700")">
+                <i class="fas fa-chart-line text-xl"></i>
+                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Dashboard</span>
+            </a>
+            <a href="@Url.Action("Devices", "Home")" class="flex items-center gap-4 p-3 rounded-xl transition-all @(ViewContext.RouteData.Values["action"]?.ToString() == "Devices" ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700")">
+                <i class="fas fa-server text-xl"></i>
+                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Gestionar IPs</span>
+            </a>
+            <hr class="border-gray-100 dark:border-slate-700 my-4">
+            <a href="#" class="flex items-center gap-4 p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
+                <i class="fas fa-cog text-xl"></i>
+                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Configuración</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main :class="sidebarOpen ? 'ml-64' : 'ml-20'" class="sidebar-transition pt-24 p-6 min-h-screen">
+        <div class="max-w-7xl mx-auto">
+            <!-- Breadcrumbs -->
+            <div class="flex items-center gap-2 text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-6 tracking-widest">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+                <i class="fas fa-chevron-right text-[8px]"></i>
+                <span class="text-blue-600 dark:text-blue-400 underline underline-offset-4 decoration-2">@ViewData["Title"]</span>
+            </div>
+
+            @RenderBody()
+        </div>
+    </main>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
