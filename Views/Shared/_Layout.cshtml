@@ -137,7 +137,11 @@
             </a>
             <a href="@Url.Action("Devices", "Home")" class="flex items-center gap-4 p-3 rounded-xl transition-all @(ViewContext.RouteData.Values["action"]?.ToString() == "Devices" ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700")">
                 <i class="fas fa-server text-xl"></i>
-                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Gestionar IPs</span>
+                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Gestionar Marcadores</span>
+            </a>
+            <a href="@Url.Action("Config", "Home")" class="flex items-center gap-4 p-3 rounded-xl transition-all @(ViewContext.RouteData.Values["action"]?.ToString() == "Config" ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700")">
+                <i class="fas fa-bell text-xl"></i>
+                <span x-show="sidebarOpen" x-transition.opacity class="font-medium">Notificaciones</span>
             </a>
             <hr class="border-gray-100 dark:border-slate-700 my-4">
             <a href="#" class="flex items-center gap-4 p-3 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">

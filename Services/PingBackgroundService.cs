@@ -14,6 +14,10 @@ namespace PingMonitorApp.Services
         private readonly Dictionary<int, int> _downCounters = new();
         private readonly Dictionary<int, DateTime> _downSince = new();
         private readonly Dictionary<int, bool> _alertSent = new();
+        
+        // Reporte de 10 minutos
+        private int _cyclesUntilReport = 20; // 20 * 30s = 10 min
+        private readonly List<FailureReportItem> _failureBatch = new();
 
         public PingBackgroundService(IServiceProvider serviceProvider)
         {
@@ -34,6 +38,7 @@ namespace PingMonitorApp.Services
                         // Llamada al PA para obtener dispositivos
                         var devices = await dbContext.Devices
                             .FromSqlRaw("EXEC pa_ObtenerDispositivosActivos")
+                            .AsNoTracking()
                             .ToListAsync(stoppingToken);
 
                         var pingTasks = devices.Select(d => PerformPingAsync(d)).ToList();
@@ -51,7 +56,7 @@ namespace PingMonitorApp.Services
                                 new SqlParameter("@LatencyMs", latency)
                             );
                             
-                            // Handle Alert Logic (La lógica de envío de correo se mantiene aquí)
+                            // Lógica de Marcadores (antes Dispositivos)
                             if (!isUp)
                             {
                                 if (!_downSince.ContainsKey(device.Id)) _downSince[device.Id] = timestamp;
@@ -59,26 +64,33 @@ namespace PingMonitorApp.Services
                                 if (!_downCounters.ContainsKey(device.Id)) _downCounters[device.Id] = 0;
                                 _downCounters[device.Id]++;
                                 
-                                // 🚨 Alert after 2 consecutive failures
-                                if (_downCounters[device.Id] == 2 && (!_alertSent.ContainsKey(device.Id) || !_alertSent[device.Id]))
+                                // Si ha fallado 2 veces seguidas y no ha sido agregado al reporte actual
+                                if (_downCounters[device.Id] >= 2)
                                 {
-                                    await emailService.SendAlertAsync(device.Name, device.IP, false);
-                                    _alertSent[device.Id] = true;
+                                    if (!_failureBatch.Any(f => f.IP == device.IP))
+                                    {
+                                        _failureBatch.Add(new FailureReportItem(device.Name, device.IP, _downSince[device.Id]));
+                                    }
                                 }
                             }
                             else
                             {
-                                // ✅ Recovery alert
-                                if (_alertSent.ContainsKey(device.Id) && _alertSent[device.Id])
-                                {
-                                    var downTime = _downSince.ContainsKey(device.Id) ? _downSince[device.Id] : (DateTime?)null;
-                                    await emailService.SendAlertAsync(device.Name, device.IP, true, downTime);
-                                }
-                                
                                 _downCounters[device.Id] = 0;
                                 _downSince.Remove(device.Id);
                                 _alertSent[device.Id] = false;
                             }
+                        }
+
+                        // Lógica de Envío de Reporte (Cada 10 min)
+                        _cyclesUntilReport--;
+                        if (_cyclesUntilReport <= 0)
+                        {
+                            if (_failureBatch.Any())
+                            {
+                                await emailService.SendSummaryReportAsync(new List<FailureReportItem>(_failureBatch));
+                                _failureBatch.Clear();
+                            }
+                            _cyclesUntilReport = 20; // Reset
                         }
                     }
                 }

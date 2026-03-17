@@ -15,5 +15,11 @@ namespace PingMonitorApp.Controllers
             ViewData["Title"] = "Gestión de Dispositivos";
             return View();
         }
+
+        public IActionResult Config()
+        {
+            ViewData["Title"] = "Configuración de Notificaciones";
+            return View();
+        }
     }
 }

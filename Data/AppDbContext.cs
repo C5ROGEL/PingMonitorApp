@@ -11,6 +11,7 @@ namespace PingMonitorApp.Data
 
         public DbSet<Device> Devices { get; set; }
         public DbSet<PingLog> PingLogs { get; set; }
+        public DbSet<EmailRecipient> EmailRecipients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
