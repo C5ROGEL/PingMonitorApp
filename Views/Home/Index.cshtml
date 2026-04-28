@@ -27,27 +27,33 @@
 
     <!-- ═══════ SUMMARY CARDS ═══════ -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-700/60 flex items-center gap-4 hover:scale-[1.03] transition-transform shadow-sm">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+        <button @@click="type = 'all'" 
+                class="glass-card rounded-2xl p-5 border flex items-center gap-4 hover:scale-[1.03] transition-all shadow-sm cursor-pointer text-left w-full group"
+                :class="type === 'all' ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/10' : 'border-slate-200 dark:border-slate-700/60'">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 group-hover:rotate-6 transition-transform">
                 <i class="fas fa-server text-lg"></i>
             </div>
             <div><p class="text-[11px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">Total Marcadores</p>
             <p class="text-2xl font-extrabold dark:text-white" x-text="sum.total">0</p></div>
-        </div>
-        <div class="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-700/60 flex items-center gap-4 hover:scale-[1.03] transition-transform shadow-sm">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30">
+        </button>
+        <button @@click="type = 'up'" 
+                class="glass-card rounded-2xl p-5 border flex items-center gap-4 hover:scale-[1.03] transition-all shadow-sm cursor-pointer text-left w-full group"
+                :class="type === 'up' ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/10' : 'border-slate-200 dark:border-slate-700/60'">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:rotate-6 transition-transform">
                 <i class="fas fa-wifi text-lg"></i>
             </div>
             <div><p class="text-[11px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">En Línea</p>
             <p class="text-2xl font-extrabold text-emerald-500" x-text="sum.up">0</p></div>
-        </div>
-        <div class="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-700/60 flex items-center gap-4 hover:scale-[1.03] transition-transform shadow-sm">
-            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-red-600 flex items-center justify-center text-white shadow-lg shadow-red-500/30">
+        </button>
+        <button @@click="type = 'down'" 
+                class="glass-card rounded-2xl p-5 border flex items-center gap-4 hover:scale-[1.03] transition-all shadow-sm cursor-pointer text-left w-full group"
+                :class="type === 'down' ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50/10' : 'border-slate-200 dark:border-slate-700/60'">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-400 to-red-600 flex items-center justify-center text-white shadow-lg shadow-red-500/30 group-hover:rotate-6 transition-transform">
                 <i class="fas fa-plug-circle-xmark text-lg"></i>
             </div>
             <div><p class="text-[11px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest">Fuera de Línea</p>
             <p class="text-2xl font-extrabold text-red-500" x-text="sum.down">0</p></div>
-        </div>
+        </button>
         <div class="glass-card rounded-2xl p-5 border border-slate-200 dark:border-slate-700/60 flex items-center gap-4 hover:scale-[1.03] transition-transform shadow-sm">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
                 <i class="fas fa-bolt text-lg"></i>
@@ -340,6 +346,7 @@ function dashboard() {
     return {
         sum: { total:0, up:0, down:0 },
         devs: [], search: '', sel: null, avgLat: 0,
+        type: 'all',
         rng: 24,
         ranges: [{h:1,label:'1H'},{h:6,label:'6H'},{h:24,label:'24H'},{h:72,label:'3D'},{h:168,label:'7D'}],
         st: { min:0, max:0, avg:0, n:0, up:0, pUp:0, pDn:0 },
@@ -372,7 +379,10 @@ function dashboard() {
 
         get filtered() {
             const q = this.search.toLowerCase();
-            return this.devs.filter(d => d.name.toLowerCase().includes(q) || d.ip.includes(q));
+            let base = this.devs;
+            if (this.type === 'up') base = base.filter(x => x.isUp);
+            if (this.type === 'down') base = base.filter(x => !x.isUp);
+            return base.filter(d => d.name.toLowerCase().includes(q) || d.ip.includes(q));
         },
 
         pick(d) { 

@@ -16,7 +16,7 @@ namespace PingMonitorApp.Services
         private readonly Dictionary<int, bool> _alertSent = new();
         
         // Reporte de 10 minutos
-        private int _cyclesUntilReport = 20; // 20 * 30s = 10 min
+        private int _cyclesUntilReport = 10; // 10 * 1 min = 10 min
         private readonly List<FailureReportItem> _failureBatch = new();
 
         public PingBackgroundService(IServiceProvider serviceProvider)
@@ -67,6 +67,12 @@ namespace PingMonitorApp.Services
                                 // Si ha fallado 2 veces seguidas y no ha sido agregado al reporte actual
                                 if (_downCounters[device.Id] >= 2)
                                 {
+                                    if (!_alertSent.GetValueOrDefault(device.Id))
+                                    {
+                                        await emailService.SendAlertAsync(device.Name, device.IP, false, _downSince[device.Id]);
+                                        _alertSent[device.Id] = true;
+                                    }
+
                                     if (!_failureBatch.Any(f => f.IP == device.IP))
                                     {
                                         _failureBatch.Add(new FailureReportItem(device.Name, device.IP, _downSince[device.Id]));
@@ -75,6 +81,11 @@ namespace PingMonitorApp.Services
                             }
                             else
                             {
+                                if (_alertSent.GetValueOrDefault(device.Id))
+                                {
+                                    await emailService.SendAlertAsync(device.Name, device.IP, true, _downSince.GetValueOrDefault(device.Id));
+                                }
+
                                 _downCounters[device.Id] = 0;
                                 _downSince.Remove(device.Id);
                                 _alertSent[device.Id] = false;
@@ -90,7 +101,7 @@ namespace PingMonitorApp.Services
                                 await emailService.SendSummaryReportAsync(new List<FailureReportItem>(_failureBatch));
                                 _failureBatch.Clear();
                             }
-                            _cyclesUntilReport = 20; // Reset
+                            _cyclesUntilReport = 10; // Reset (10 * 1 min = 10 min)
                         }
                     }
                 }
@@ -106,7 +117,7 @@ namespace PingMonitorApp.Services
                 
                 if (!stoppingToken.IsCancellationRequested)
                 {
-                    try { await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken); }
+                    try { await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken); }
                     catch (OperationCanceledException) { break; }
                 }
             }

@@ -45,6 +45,7 @@ namespace PingMonitorApp.Services
             
             if (!isUp)
             {
+                var dropTime = downSince ?? DateTime.Now;
                 message.Subject = $"🚨 ALERTA CRÍTICA: {deviceName} DOWN";
                 var bodyBuilder = new BodyBuilder();
                 bodyBuilder.HtmlBody = $@"
@@ -54,7 +55,7 @@ namespace PingMonitorApp.Services
                         <table style='width: 100%; border-collapse: collapse;'>
                             <tr><td style='padding: 8px; font-weight: bold;'>Marcador:</td><td>{deviceName}</td></tr>
                             <tr><td style='padding: 8px; font-weight: bold;'>Dirección IP:</td><td>{ip}</td></tr>
-                            <tr><td style='padding: 8px; font-weight: bold;'>Hora de Caída:</td><td>{DateTime.Now:dd/MM/yyyy HH:mm:ss}</td></tr>
+                            <tr><td style='padding: 8px; font-weight: bold;'>Hora de Caída:</td><td>{dropTime:dd/MM/yyyy HH:mm:ss}</td></tr>
                         </table>
                         <p style='margin-top: 20px; color: #7f1d1d; font-size: 0.8em;'>Este es un mensaje automático del sistema de monitoreo MOPT.</p>
                     </div>";
